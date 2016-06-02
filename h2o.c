@@ -20,6 +20,7 @@ int arg = 10;
 int water;
 //void * used for creating threads
 void *tid;
+int i;
 
 void hReady();
 void oReady();
@@ -38,6 +39,22 @@ int main(){
 	sem_init(o, 1);
 	
 	for(water = 0; water < 1; water++){
+		tid = thread_create(hReady, (void *) &arg);
+		if(tid <= 0){
+			sem_acquire(p);
+			printf(1, "Failed to create a thread\n");
+			sem_signal(p);
+			exit();
+		}
+		for(i = 0; i < 999999; i++);
+		tid = thread_create(hReady, (void *) &arg);
+		if(tid <= 0){
+			sem_acquire(p);
+			printf(1, "Failed to create a thread\n");
+			sem_signal(p);
+			exit();
+		}
+		for(i = 0; i < 999999; i++);
 		tid = thread_create(oReady, (void *) &arg);
 		if(tid <= 0){
 			sem_acquire(p);
@@ -45,20 +62,7 @@ int main(){
 			sem_signal(p);
 			exit();
 		}
-		tid = thread_create(hReady, (void *) &arg);
-		if(tid <= 0){
-			sem_acquire(p);
-			printf(1, "Failed to create a thread\n");
-			sem_signal(p);
-			exit();
-		}
-		tid = thread_create(hReady, (void *) &arg);
-		if(tid <= 0){
-			sem_acquire(p);
-			printf(1, "Failed to create a thread\n");
-			sem_signal(p);
-			exit();
-		}
+		for(i = 0; i < 999999; i++);
 	}
 	while(wait()>= 0);
 	
@@ -77,6 +81,7 @@ int main(){
 			sem_signal(p);
 			exit();
 		}
+		for(i = 0; i < 999999; i++);
 		tid = thread_create(hReady, (void *) &arg);
 		if(tid <= 0){
 			sem_acquire(p);
@@ -84,6 +89,7 @@ int main(){
 			sem_signal(p);
 			exit();
 		}
+		for(i = 0; i < 999999; i++);
 		tid = thread_create(hReady, (void *) &arg);
 		if(tid <= 0){
 			sem_acquire(p);
@@ -91,6 +97,7 @@ int main(){
 			sem_signal(p);
 			exit();
 		}
+		for(i = 0; i < 999999; i++);
 	}
 	while(wait()>= 0);
 	
@@ -109,6 +116,7 @@ int main(){
 			sem_signal(p);
 			exit();
 		}
+		for(i = 0; i < 999999; i++);
 		tid = thread_create(oReady, (void *) &arg);
 		if(tid <= 0){
 			sem_acquire(p);
@@ -116,6 +124,7 @@ int main(){
 			sem_signal(p);
 			exit();
 		}
+		for(i = 0; i < 999999; i++);
 		tid = thread_create(hReady, (void *) &arg);
 		if(tid <= 0){
 			sem_acquire(p);
@@ -123,6 +132,7 @@ int main(){
 			sem_signal(p);
 			exit();
 		}
+		for(i = 0; i < 999999; i++);
 	}
 	while(wait()>= 0);
 	
@@ -141,6 +151,7 @@ int main(){
 			sem_signal(p);
 			exit();
 		}
+		for(i = 0; i < 999999; i++);
 		tid = thread_create(hReady, (void *) &arg);
 		if(tid <= 0){
 			sem_acquire(p);
@@ -148,6 +159,7 @@ int main(){
 			sem_signal(p);
 			exit();
 		}
+		for(i = 0; i < 999999; i++);
 		tid = thread_create(oReady, (void *) &arg);
 		if(tid <= 0){
 			sem_acquire(p);
@@ -155,6 +167,7 @@ int main(){
 			sem_signal(p);
 			exit();
 		}
+		for(i = 0; i < 999999; i++);
 	}
 	while(wait()>= 0);
 	
