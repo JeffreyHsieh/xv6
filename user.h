@@ -26,6 +26,10 @@ int clone(int stack, int size,int routine, int arg);
 void texit(void) __attribute__((noreturn));
 void tsleep(void);
 void twakeup(int);
+void h2o(void);
+void monkey(void);
+void river(void);
+void dnull(void);
 
 // ulib.c
 int stat(char*, struct stat*);
