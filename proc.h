@@ -69,6 +69,7 @@ struct proc {
   char name[16];               // Process name (debugging)
   uint *pstack;
   int isthread;
+  int isYielding;
 };
 
 // Process memory is laid out contiguously, low addresses first:

@@ -47,6 +47,8 @@ int atoi(const char*);
 int random(int);
 
 void *thread_create(void (*start_routine)(void*), void *arg);
+void thread_yield(void);
+
 // lock util
 void lock_init(lock_t *lock);
 void lock_acquire(lock_t *lock);

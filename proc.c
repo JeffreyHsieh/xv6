@@ -350,6 +350,15 @@ texit(void)
     acquire(&ptable.lock);
     // Parent might be sleeping in wait().
     wakeup1(proc->parent);
+    release(&ptable.lock);
+
+    struct proc *p;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->isthread == 1 && p->state == SLEEPING && p->isYielding == 1){
+        twakeup(p->pid);
+      }
+    }
+    acquire(&ptable.lock);
     // Pass abandoned children to init.
     //  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     //    if(p->parent == proc){
@@ -482,6 +491,24 @@ yield(void)
     release(&ptable.lock);
 }
 
+void thread_yield(void){
+  int i = 0;
+  struct proc *p;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->isthread == 1 && p->state != SLEEPING){
+      i++;
+    }
+    else if(p->isthread == 1 && p->state != SLEEPING && p->isYielding == 1){
+      twakeup(p->pid);
+      i++;
+    }
+  }
+  if(i > 0){
+    proc->isYielding = 1;
+    tsleep();
+    proc->isYielding = 0;
+  }
+}
 // A fork child's very first scheduling by scheduler()
 // will swtch here.  "Return" to user space.
     void

@@ -423,3 +423,7 @@ sys_pipe(void)
   fd[1] = fd1;
   return 0;
 }
+
+void sys_thread_yield(void){
+  thread_yield();
+}
