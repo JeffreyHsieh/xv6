@@ -180,6 +180,7 @@ UPROGS=\
 	_monkey\
 	_river\
 	_dnull\
+	_tyield\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
@@ -247,7 +248,7 @@ qemu-nox-gdb: fs.img xv6.img .gdbinit
 # check in that version.
 
 EXTRA=\
-	mkfs.c ulib.c user.h cat.c echo.c forktest.c grep.c kill.c h2o.c monkey.c river.c dnull.c\
+	mkfs.c ulib.c user.h cat.c echo.c forktest.c grep.c kill.c h2o.c monkey.c river.c dnull.c tyield\
 	ln.c ls.c mkdir.c rm.c stressfs.c usertests.c wc.c zombie.c\
 	printf.c umalloc.c test1.c test.c test_sleep.c frisbee.c\
 	test_q.c test_random.c\

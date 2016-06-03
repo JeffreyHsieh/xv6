@@ -30,6 +30,7 @@ void h2o(void);
 void monkey(void);
 void river(void);
 void dnull(void);
+void tyield(void);
 
 // ulib.c
 int stat(char*, struct stat*);
