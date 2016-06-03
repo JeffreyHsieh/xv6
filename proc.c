@@ -12,6 +12,8 @@ struct {
     struct proc proc[NPROC];
 } ptable;
 
+struct spinlock tylock;
+
 static struct proc *initproc;
 
 int nextpid = 1;
@@ -45,6 +47,7 @@ memcop(void *dst, void *src, uint n)
 pinit(void)
 {
     initlock(&ptable.lock, "ptable");
+    initlock(&tylock, "yeildlock");
 }
 
 //PAGEBREAK: 32
@@ -351,13 +354,14 @@ texit(void)
     // Parent might be sleeping in wait().
     wakeup1(proc->parent);
     release(&ptable.lock);
-
+		acquire(&tylock);
     struct proc *p;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->isthread == 1 && p->state == SLEEPING && p->isYielding == 1){
         twakeup(p->pid);
       }
     }
+    release(&tylock);
     acquire(&ptable.lock);
     // Pass abandoned children to init.
     //  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
@@ -492,22 +496,48 @@ yield(void)
 }
 
 void thread_yield(void){
-  int i = 0;
+	cprintf("Got here\n");
+	acquire(&tylock);
+  int i = -1;
   struct proc *p;
+  struct proc *w = 0;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->isthread == 1 && p->state != SLEEPING){
+			cprintf("Here too 1\n");
       i++;
     }
-    else if(p->isthread == 1 && p->state != SLEEPING && p->isYielding == 1){
-      twakeup(p->pid);
+    else if(p->isthread == 1 && p->state == SLEEPING && p->isYielding == 1){
+			cprintf("Here too 2\n");
+      w = p;
       i++;
     }
   }
-  if(i > 0){
+  if(w != 0){
+		cprintf("Waking up\n");
+		twakeup(w->pid);
+    cprintf("Going to sleep\n");
+		acquire(&ptable.lock);
     proc->isYielding = 1;
+    release(&ptable.lock);
+    release(&tylock);
     tsleep();
+    acquire(&ptable.lock);
     proc->isYielding = 0;
+    release(&ptable.lock);
+	}
+  else if(i > 0){
+		cprintf("Going to sleep\n");
+		acquire(&ptable.lock);
+    proc->isYielding = 1;
+    release(&ptable.lock);
+    release(&tylock);
+    tsleep();
+    acquire(&ptable.lock);
+    proc->isYielding = 0;
+    release(&ptable.lock);
   }
+  else
+		release(&tylock);
 }
 // A fork child's very first scheduling by scheduler()
 // will swtch here.  "Return" to user space.
