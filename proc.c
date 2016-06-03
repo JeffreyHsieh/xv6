@@ -496,47 +496,30 @@ yield(void)
 }
 
 void thread_yield(void){
-	cprintf("Got here\n");
 	acquire(&tylock);
   int i = -1;
-  struct proc *p;
-  struct proc *w = 0;
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->isthread == 1 && p->state != SLEEPING){
-			cprintf("Here too 1\n");
-      i++;
-    }
-    else if(p->isthread == 1 && p->state == SLEEPING && p->isYielding == 1){
-			cprintf("Here too 2\n");
-      w = p;
-      i++;
-    }
-  }
-  if(w != 0){
-		cprintf("Waking up\n");
-		twakeup(w->pid);
-    cprintf("Going to sleep\n");
-		acquire(&ptable.lock);
-    proc->isYielding = 1;
-    release(&ptable.lock);
-    release(&tylock);
-    tsleep();
-    acquire(&ptable.lock);
-    proc->isYielding = 0;
-    release(&ptable.lock);
+	struct proc *p;
+	for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+		if(p->isthread == 1 && p->state != SLEEPING){
+			i++;
+		}
+		else if(p->isthread == 1 && p->state == SLEEPING && p->isYielding == 1){
+			twakeup(p->pid);
+			i++;
+		}
 	}
-  else if(i > 0){
-		cprintf("Going to sleep\n");
+	
+	if(i > 0){
 		acquire(&ptable.lock);
-    proc->isYielding = 1;
-    release(&ptable.lock);
-    release(&tylock);
-    tsleep();
-    acquire(&ptable.lock);
-    proc->isYielding = 0;
-    release(&ptable.lock);
-  }
-  else
+		proc->isYielding = 1;
+		release(&ptable.lock);
+		release(&tylock);
+		tsleep();
+		acquire(&ptable.lock);
+		proc->isYielding = 0;
+		release(&ptable.lock);
+	}
+	else
 		release(&tylock);
 }
 // A fork child's very first scheduling by scheduler()

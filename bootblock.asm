@@ -60,7 +60,7 @@ seta20.2:
   # effective memory map doesn't change during the transition.
   lgdt    gdtdesc
     7c1d:	0f 01 16             	lgdtl  (%esi)
-    7c20:	78 7c                	js     7c9e <readsect+0x9>
+    7c20:	78 7c                	js     7c9e <readsect+0xc>
   movl    %cr0, %eax
     7c22:	0f 20 c0             	mov    %cr0,%eax
   orl     $CR0_PE, %eax
@@ -99,7 +99,7 @@ start32:
   movl    $start, %esp
     7c43:	bc 00 7c 00 00       	mov    $0x7c00,%esp
   call    bootmain
-    7c48:	e8 e9 00 00 00       	call   7d36 <bootmain>
+    7c48:	e8 e4 00 00 00       	call   7d31 <bootmain>
 
   # If bootmain returns (it shouldn't), trigger a Bochs
   # breakpoint if running under Bochs, then loop.
@@ -132,8 +132,7 @@ spin:
     7c78:	17                   	pop    %ss
     7c79:	00 60 7c             	add    %ah,0x7c(%eax)
     7c7c:	00 00                	add    %al,(%eax)
-    7c7e:	90                   	nop
-    7c7f:	90                   	nop
+    7c7e:	66 90                	xchg   %ax,%ax
 
 00007c80 <waitdisk>:
   entry();
@@ -154,242 +153,234 @@ inb(ushort port)
     7c88:	ec                   	in     (%dx),%al
   // Wait for disk ready.
   while((inb(0x1F7) & 0xC0) != 0x40)
-    7c89:	25 c0 00 00 00       	and    $0xc0,%eax
-    7c8e:	83 f8 40             	cmp    $0x40,%eax
-    7c91:	75 f5                	jne    7c88 <waitdisk+0x8>
+    7c89:	83 e0 c0             	and    $0xffffffc0,%eax
+    7c8c:	3c 40                	cmp    $0x40,%al
+    7c8e:	75 f8                	jne    7c88 <waitdisk+0x8>
     ;
 }
-    7c93:	5d                   	pop    %ebp
-    7c94:	c3                   	ret    
+    7c90:	5d                   	pop    %ebp
+    7c91:	c3                   	ret    
 
-00007c95 <readsect>:
+00007c92 <readsect>:
 
 // Read a single sector at offset into dst.
 void
 readsect(void *dst, uint offset)
 {
-    7c95:	55                   	push   %ebp
-    7c96:	89 e5                	mov    %esp,%ebp
-    7c98:	57                   	push   %edi
-    7c99:	53                   	push   %ebx
-    7c9a:	8b 5d 0c             	mov    0xc(%ebp),%ebx
+    7c92:	55                   	push   %ebp
+    7c93:	89 e5                	mov    %esp,%ebp
+    7c95:	57                   	push   %edi
+    7c96:	53                   	push   %ebx
+    7c97:	8b 5d 0c             	mov    0xc(%ebp),%ebx
   // Issue command.
   waitdisk();
-    7c9d:	e8 de ff ff ff       	call   7c80 <waitdisk>
+    7c9a:	e8 e1 ff ff ff       	call   7c80 <waitdisk>
 }
 
 static inline void
 outb(ushort port, uchar data)
 {
   asm volatile("out %0,%1" : : "a" (data), "d" (port));
-    7ca2:	ba f2 01 00 00       	mov    $0x1f2,%edx
-    7ca7:	b8 01 00 00 00       	mov    $0x1,%eax
-    7cac:	ee                   	out    %al,(%dx)
-    7cad:	b2 f3                	mov    $0xf3,%dl
-    7caf:	89 d8                	mov    %ebx,%eax
-    7cb1:	ee                   	out    %al,(%dx)
-    7cb2:	89 d8                	mov    %ebx,%eax
-    7cb4:	c1 e8 08             	shr    $0x8,%eax
-    7cb7:	b2 f4                	mov    $0xf4,%dl
-    7cb9:	ee                   	out    %al,(%dx)
-    7cba:	89 d8                	mov    %ebx,%eax
-    7cbc:	c1 e8 10             	shr    $0x10,%eax
-    7cbf:	b2 f5                	mov    $0xf5,%dl
-    7cc1:	ee                   	out    %al,(%dx)
-    7cc2:	c1 eb 18             	shr    $0x18,%ebx
-    7cc5:	89 d8                	mov    %ebx,%eax
-    7cc7:	83 c8 e0             	or     $0xffffffe0,%eax
-    7cca:	b2 f6                	mov    $0xf6,%dl
-    7ccc:	ee                   	out    %al,(%dx)
-    7ccd:	b2 f7                	mov    $0xf7,%dl
-    7ccf:	b8 20 00 00 00       	mov    $0x20,%eax
-    7cd4:	ee                   	out    %al,(%dx)
+    7c9f:	ba f2 01 00 00       	mov    $0x1f2,%edx
+    7ca4:	b8 01 00 00 00       	mov    $0x1,%eax
+    7ca9:	ee                   	out    %al,(%dx)
+    7caa:	b2 f3                	mov    $0xf3,%dl
+    7cac:	89 d8                	mov    %ebx,%eax
+    7cae:	ee                   	out    %al,(%dx)
+    7caf:	0f b6 c7             	movzbl %bh,%eax
+    7cb2:	b2 f4                	mov    $0xf4,%dl
+    7cb4:	ee                   	out    %al,(%dx)
+  outb(0x1F2, 1);   // count = 1
+  outb(0x1F3, offset);
+  outb(0x1F4, offset >> 8);
   outb(0x1F5, offset >> 16);
+    7cb5:	89 d8                	mov    %ebx,%eax
+    7cb7:	c1 e8 10             	shr    $0x10,%eax
+    7cba:	b2 f5                	mov    $0xf5,%dl
+    7cbc:	ee                   	out    %al,(%dx)
   outb(0x1F6, (offset >> 24) | 0xE0);
+    7cbd:	c1 eb 18             	shr    $0x18,%ebx
+    7cc0:	89 d8                	mov    %ebx,%eax
+    7cc2:	83 c8 e0             	or     $0xffffffe0,%eax
+    7cc5:	b2 f6                	mov    $0xf6,%dl
+    7cc7:	ee                   	out    %al,(%dx)
+    7cc8:	b2 f7                	mov    $0xf7,%dl
+    7cca:	b8 20 00 00 00       	mov    $0x20,%eax
+    7ccf:	ee                   	out    %al,(%dx)
   outb(0x1F7, 0x20);  // cmd 0x20 - read sectors
 
   // Read data.
   waitdisk();
-    7cd5:	e8 a6 ff ff ff       	call   7c80 <waitdisk>
+    7cd0:	e8 ab ff ff ff       	call   7c80 <waitdisk>
 }
 
 static inline void
 insl(int port, void *addr, int cnt)
 {
   asm volatile("cld; rep insl" :
-    7cda:	8b 7d 08             	mov    0x8(%ebp),%edi
-    7cdd:	b9 80 00 00 00       	mov    $0x80,%ecx
-    7ce2:	ba f0 01 00 00       	mov    $0x1f0,%edx
-    7ce7:	fc                   	cld    
-    7ce8:	f3 6d                	rep insl (%dx),%es:(%edi)
+    7cd5:	8b 7d 08             	mov    0x8(%ebp),%edi
+    7cd8:	b9 80 00 00 00       	mov    $0x80,%ecx
+    7cdd:	ba f0 01 00 00       	mov    $0x1f0,%edx
+    7ce2:	fc                   	cld    
+    7ce3:	f3 6d                	rep insl (%dx),%es:(%edi)
   insl(0x1F0, dst, SECTSIZE/4);
 }
-    7cea:	5b                   	pop    %ebx
-    7ceb:	5f                   	pop    %edi
-    7cec:	5d                   	pop    %ebp
-    7ced:	c3                   	ret    
+    7ce5:	5b                   	pop    %ebx
+    7ce6:	5f                   	pop    %edi
+    7ce7:	5d                   	pop    %ebp
+    7ce8:	c3                   	ret    
 
-00007cee <readseg>:
+00007ce9 <readseg>:
 
 // Read 'count' bytes at 'offset' from kernel into physical address 'pa'.
 // Might copy more than asked.
 void
 readseg(uchar* pa, uint count, uint offset)
 {
-    7cee:	55                   	push   %ebp
-    7cef:	89 e5                	mov    %esp,%ebp
-    7cf1:	57                   	push   %edi
-    7cf2:	56                   	push   %esi
-    7cf3:	53                   	push   %ebx
-    7cf4:	83 ec 08             	sub    $0x8,%esp
-    7cf7:	8b 5d 08             	mov    0x8(%ebp),%ebx
-    7cfa:	8b 75 10             	mov    0x10(%ebp),%esi
+    7ce9:	55                   	push   %ebp
+    7cea:	89 e5                	mov    %esp,%ebp
+    7cec:	57                   	push   %edi
+    7ced:	56                   	push   %esi
+    7cee:	53                   	push   %ebx
+    7cef:	83 ec 08             	sub    $0x8,%esp
+    7cf2:	8b 5d 08             	mov    0x8(%ebp),%ebx
+    7cf5:	8b 75 10             	mov    0x10(%ebp),%esi
   uchar* epa;
 
   epa = pa + count;
-    7cfd:	89 df                	mov    %ebx,%edi
-    7cff:	03 7d 0c             	add    0xc(%ebp),%edi
+    7cf8:	89 df                	mov    %ebx,%edi
+    7cfa:	03 7d 0c             	add    0xc(%ebp),%edi
 
   // Round down to sector boundary.
   pa -= offset % SECTSIZE;
-    7d02:	89 f0                	mov    %esi,%eax
-    7d04:	25 ff 01 00 00       	and    $0x1ff,%eax
-    7d09:	29 c3                	sub    %eax,%ebx
-  offset = (offset / SECTSIZE) + 1;
-
-  // If this is too slow, we could read lots of sectors at a time.
-  // We'd write more to memory than asked, but it doesn't matter --
-  // we load in increasing order.
-  for(; pa < epa; pa += SECTSIZE, offset++)
-    7d0b:	39 df                	cmp    %ebx,%edi
-    7d0d:	76 1f                	jbe    7d2e <readseg+0x40>
-
-  // Round down to sector boundary.
-  pa -= offset % SECTSIZE;
+    7cfd:	89 f0                	mov    %esi,%eax
+    7cff:	25 ff 01 00 00       	and    $0x1ff,%eax
+    7d04:	29 c3                	sub    %eax,%ebx
 
   // Translate from bytes to sectors; kernel starts at sector 1.
   offset = (offset / SECTSIZE) + 1;
-    7d0f:	c1 ee 09             	shr    $0x9,%esi
-    7d12:	83 c6 01             	add    $0x1,%esi
+    7d06:	c1 ee 09             	shr    $0x9,%esi
+    7d09:	83 c6 01             	add    $0x1,%esi
 
   // If this is too slow, we could read lots of sectors at a time.
   // We'd write more to memory than asked, but it doesn't matter --
   // we load in increasing order.
   for(; pa < epa; pa += SECTSIZE, offset++)
+    7d0c:	39 df                	cmp    %ebx,%edi
+    7d0e:	76 19                	jbe    7d29 <readseg+0x40>
     readsect(pa, offset);
-    7d15:	89 74 24 04          	mov    %esi,0x4(%esp)
-    7d19:	89 1c 24             	mov    %ebx,(%esp)
-    7d1c:	e8 74 ff ff ff       	call   7c95 <readsect>
+    7d10:	89 74 24 04          	mov    %esi,0x4(%esp)
+    7d14:	89 1c 24             	mov    %ebx,(%esp)
+    7d17:	e8 76 ff ff ff       	call   7c92 <readsect>
   offset = (offset / SECTSIZE) + 1;
 
   // If this is too slow, we could read lots of sectors at a time.
   // We'd write more to memory than asked, but it doesn't matter --
   // we load in increasing order.
   for(; pa < epa; pa += SECTSIZE, offset++)
-    7d21:	81 c3 00 02 00 00    	add    $0x200,%ebx
-    7d27:	83 c6 01             	add    $0x1,%esi
-    7d2a:	39 df                	cmp    %ebx,%edi
-    7d2c:	77 e7                	ja     7d15 <readseg+0x27>
+    7d1c:	81 c3 00 02 00 00    	add    $0x200,%ebx
+    7d22:	83 c6 01             	add    $0x1,%esi
+    7d25:	39 df                	cmp    %ebx,%edi
+    7d27:	77 e7                	ja     7d10 <readseg+0x27>
     readsect(pa, offset);
 }
-    7d2e:	83 c4 08             	add    $0x8,%esp
-    7d31:	5b                   	pop    %ebx
-    7d32:	5e                   	pop    %esi
-    7d33:	5f                   	pop    %edi
-    7d34:	5d                   	pop    %ebp
-    7d35:	c3                   	ret    
+    7d29:	83 c4 08             	add    $0x8,%esp
+    7d2c:	5b                   	pop    %ebx
+    7d2d:	5e                   	pop    %esi
+    7d2e:	5f                   	pop    %edi
+    7d2f:	5d                   	pop    %ebp
+    7d30:	c3                   	ret    
 
-00007d36 <bootmain>:
+00007d31 <bootmain>:
 
 void readseg(uchar*, uint, uint);
 
 void
 bootmain(void)
 {
-    7d36:	55                   	push   %ebp
-    7d37:	89 e5                	mov    %esp,%ebp
-    7d39:	57                   	push   %edi
-    7d3a:	56                   	push   %esi
-    7d3b:	53                   	push   %ebx
-    7d3c:	83 ec 2c             	sub    $0x2c,%esp
+    7d31:	55                   	push   %ebp
+    7d32:	89 e5                	mov    %esp,%ebp
+    7d34:	57                   	push   %edi
+    7d35:	56                   	push   %esi
+    7d36:	53                   	push   %ebx
+    7d37:	83 ec 1c             	sub    $0x1c,%esp
   uchar* pa;
 
   elf = (struct elfhdr*)0x10000;  // scratch space
 
   // Read 1st page off disk
   readseg((uchar*)elf, 4096, 0);
-    7d3f:	c7 44 24 08 00 00 00 	movl   $0x0,0x8(%esp)
-    7d46:	00 
-    7d47:	c7 44 24 04 00 10 00 	movl   $0x1000,0x4(%esp)
-    7d4e:	00 
-    7d4f:	c7 04 24 00 00 01 00 	movl   $0x10000,(%esp)
-    7d56:	e8 93 ff ff ff       	call   7cee <readseg>
+    7d3a:	c7 44 24 08 00 00 00 	movl   $0x0,0x8(%esp)
+    7d41:	00 
+    7d42:	c7 44 24 04 00 10 00 	movl   $0x1000,0x4(%esp)
+    7d49:	00 
+    7d4a:	c7 04 24 00 00 01 00 	movl   $0x10000,(%esp)
+    7d51:	e8 93 ff ff ff       	call   7ce9 <readseg>
 
   // Is this an ELF executable?
   if(elf->magic != ELF_MAGIC)
-    7d5b:	81 3d 00 00 01 00 7f 	cmpl   $0x464c457f,0x10000
-    7d62:	45 4c 46 
-    7d65:	75 5d                	jne    7dc4 <bootmain+0x8e>
+    7d56:	81 3d 00 00 01 00 7f 	cmpl   $0x464c457f,0x10000
+    7d5d:	45 4c 46 
+    7d60:	75 57                	jne    7db9 <bootmain+0x88>
     return;  // let bootasm.S handle error
 
   // Load each program segment (ignores ph flags).
   ph = (struct proghdr*)((uchar*)elf + elf->phoff);
-    7d67:	b8 00 00 01 00       	mov    $0x10000,%eax
-    7d6c:	8b 58 1c             	mov    0x1c(%eax),%ebx
-    7d6f:	81 c3 00 00 01 00    	add    $0x10000,%ebx
+    7d62:	a1 1c 00 01 00       	mov    0x1001c,%eax
+    7d67:	8d 98 00 00 01 00    	lea    0x10000(%eax),%ebx
   eph = ph + elf->phnum;
-    7d75:	0f b7 40 2c          	movzwl 0x2c(%eax),%eax
-    7d79:	c1 e0 05             	shl    $0x5,%eax
-    7d7c:	8d 04 03             	lea    (%ebx,%eax,1),%eax
-    7d7f:	89 45 e4             	mov    %eax,-0x1c(%ebp)
+    7d6d:	0f b7 35 2c 00 01 00 	movzwl 0x1002c,%esi
+    7d74:	c1 e6 05             	shl    $0x5,%esi
+    7d77:	01 de                	add    %ebx,%esi
   for(; ph < eph; ph++){
-    7d82:	39 c3                	cmp    %eax,%ebx
-    7d84:	73 38                	jae    7dbe <bootmain+0x88>
+    7d79:	39 f3                	cmp    %esi,%ebx
+    7d7b:	73 36                	jae    7db3 <bootmain+0x82>
     pa = (uchar*)ph->paddr;
-    7d86:	8b 73 0c             	mov    0xc(%ebx),%esi
+    7d7d:	8b 7b 0c             	mov    0xc(%ebx),%edi
     readseg(pa, ph->filesz, ph->off);
-    7d89:	8b 43 04             	mov    0x4(%ebx),%eax
-    7d8c:	89 44 24 08          	mov    %eax,0x8(%esp)
-    7d90:	8b 43 10             	mov    0x10(%ebx),%eax
-    7d93:	89 44 24 04          	mov    %eax,0x4(%esp)
-    7d97:	89 34 24             	mov    %esi,(%esp)
-    7d9a:	e8 4f ff ff ff       	call   7cee <readseg>
+    7d80:	8b 43 04             	mov    0x4(%ebx),%eax
+    7d83:	89 44 24 08          	mov    %eax,0x8(%esp)
+    7d87:	8b 43 10             	mov    0x10(%ebx),%eax
+    7d8a:	89 44 24 04          	mov    %eax,0x4(%esp)
+    7d8e:	89 3c 24             	mov    %edi,(%esp)
+    7d91:	e8 53 ff ff ff       	call   7ce9 <readseg>
     if(ph->memsz > ph->filesz)
-    7d9f:	8b 4b 14             	mov    0x14(%ebx),%ecx
-    7da2:	8b 43 10             	mov    0x10(%ebx),%eax
-    7da5:	39 c1                	cmp    %eax,%ecx
-    7da7:	76 0d                	jbe    7db6 <bootmain+0x80>
+    7d96:	8b 4b 14             	mov    0x14(%ebx),%ecx
+    7d99:	8b 43 10             	mov    0x10(%ebx),%eax
+    7d9c:	39 c1                	cmp    %eax,%ecx
+    7d9e:	76 0c                	jbe    7dac <bootmain+0x7b>
+      stosb(pa + ph->filesz, 0, ph->memsz - ph->filesz);
+    7da0:	01 c7                	add    %eax,%edi
+    7da2:	29 c1                	sub    %eax,%ecx
 }
 
 static inline void
 stosb(void *addr, int data, int cnt)
 {
   asm volatile("cld; rep stosb" :
-    7da9:	8d 3c 06             	lea    (%esi,%eax,1),%edi
-    7dac:	29 c1                	sub    %eax,%ecx
-    7dae:	b8 00 00 00 00       	mov    $0x0,%eax
-    7db3:	fc                   	cld    
-    7db4:	f3 aa                	rep stos %al,%es:(%edi)
+    7da4:	b8 00 00 00 00       	mov    $0x0,%eax
+    7da9:	fc                   	cld    
+    7daa:	f3 aa                	rep stos %al,%es:(%edi)
     return;  // let bootasm.S handle error
 
   // Load each program segment (ignores ph flags).
   ph = (struct proghdr*)((uchar*)elf + elf->phoff);
   eph = ph + elf->phnum;
   for(; ph < eph; ph++){
-    7db6:	83 c3 20             	add    $0x20,%ebx
-    7db9:	39 5d e4             	cmp    %ebx,-0x1c(%ebp)
-    7dbc:	77 c8                	ja     7d86 <bootmain+0x50>
+    7dac:	83 c3 20             	add    $0x20,%ebx
+    7daf:	39 de                	cmp    %ebx,%esi
+    7db1:	77 ca                	ja     7d7d <bootmain+0x4c>
   }
 
   // Call the entry point from the ELF header.
   // Does not return!
   entry = (void(*)(void))(elf->entry);
   entry();
-    7dbe:	ff 15 18 00 01 00    	call   *0x10018
+    7db3:	ff 15 18 00 01 00    	call   *0x10018
 }
-    7dc4:	83 c4 2c             	add    $0x2c,%esp
-    7dc7:	5b                   	pop    %ebx
-    7dc8:	5e                   	pop    %esi
-    7dc9:	5f                   	pop    %edi
-    7dca:	5d                   	pop    %ebp
-    7dcb:	c3                   	ret    
+    7db9:	83 c4 1c             	add    $0x1c,%esp
+    7dbc:	5b                   	pop    %ebx
+    7dbd:	5e                   	pop    %esi
+    7dbe:	5f                   	pop    %edi
+    7dbf:	5d                   	pop    %ebp
+    7dc0:	c3                   	ret    

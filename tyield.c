@@ -5,11 +5,10 @@
 void one(void * arg_ptr);
 void two(void * arg_ptr);
 
-int i;
-
 int main(){
   int arg = 10;
   void *tid;
+  int i;
 
 	tid = thread_create(one, (void *) &arg);
 	if(tid <= 0){
@@ -29,23 +28,54 @@ int main(){
   return 0;
 }
 
-// Beep
 void one(void *arg_ptr){
-	for(i = 0; i < 20; i++){
-		printf(1, "fdaaa\n");
-		thread_yield();
-		printf(1, "one\n");
-	}
+	int j;
+	
+	for(j = 0; j < 2999999; j++);
+	thread_yield();
+	printf(1, "one\n");
+	
+	for(j = 0; j < 2999999; j++);
+	thread_yield();
+	printf(1, "one\n");
+	
+	for(j = 0; j < 2999999; j++);
+	thread_yield();
+	printf(1, "one\n");
+	
+	for(j = 0; j < 2999999; j++);
+	thread_yield();
+	printf(1, "one\n");
+	
+	for(j = 0; j < 2999999; j++);
+	thread_yield();
+	printf(1, "one\n");
+	
   texit();
 }
 
-// Boop
 void two(void *arg_ptr){
-	for(i = 0; i < 20; i++){
-		printf(1, "gfsd\n");
-		thread_yield();
-		printf(1, "two\n");
-	}
+	int j;
+	
+	for(j = 0; j < 2999999; j++);
+	printf(1, "two\n");
+	thread_yield();
+	
+	for(j = 0; j < 2999999; j++);
+	printf(1, "two\n");
+	thread_yield();
+	
+	for(j = 0; j < 2999999; j++);
+	printf(1, "two\n");
+	thread_yield();
+	
+	for(j = 0; j < 2999999; j++);
+	printf(1, "two\n");
+	thread_yield();
+	
+	for(j = 0; j < 2999999; j++);
+	printf(1, "two\n");
+	
   texit();
 }
 
